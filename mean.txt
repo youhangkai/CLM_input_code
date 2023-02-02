@@ -1,0 +1,46 @@
+export domainPath=/home/hyou34/
+export surfdataFile=mean.nc
+
+
+export RES=f19_g16
+export COMPSET=2000_DATM%GSWP3v1_CLM50%SP_SICE_SOCN_MOSART_SGLC_SWAV
+
+export COMPILER=gnu
+export MACH=chtc
+export CASE_NAME=/home/groups/chen_group/hangkai/Global_ET/MEAN_from_1950_to_2010
+
+cd /home/groups/chen_group/CLM/clm5.0/cime/scripts
+
+./create_newcase --compset ${COMPSET} --res ${RES} --case ${CASE_NAME} --compiler ${COMPILER} --mach ${MACH}  --run-unsupported
+cd ${CASE_NAME}
+
+./xmlchange DATM_MODE="CLMGSWP3v1",DATM_CLMNCEP_YR_START='1950',DATM_CLMNCEP_YR_END='2010'
+./xmlchange NTASKS=256,STOP_N=61,STOP_OPTION=nyears,JOB_WALLCLOCK_TIME="24:00:00",RUN_STARTDATE="1950-01-01",REST_N=1,REST_OPTION=nyears,RESUBMIT=0
+./xmlchange CIME_OUTPUT_ROOT=/home/groups/chen_group/CESM/output
+cat >> user_nl_clm << EOF
+hist_nhtfrq = 0,-8760
+hist_mfilt  = 12,1
+hist_empty_htapes = .true.
+hist_fincl1 = 'FCEV','FCTR','QVEGE','QVEGT','FGEV','FCTR'
+
+
+fsurdat = '${domainPath}${surfdataFile}'
+use_init_interp = .false.
+check_dynpft_consistency = .false.
+EOF
+
+
+./case.setup
+echo CASE_setup_SUCCESS
+
+srun -n1 -N1 -p pre --time=20:00:00 ./case.build
+echo CASE_BUILD_SUCCESS
+
+
+
+./case.submit
+
+echo CASE_SUBMIT_SUCCESS
+
+
+
