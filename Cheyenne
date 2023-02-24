@@ -1,0 +1,43 @@
+export domainPath=/glade/u/home/hangkaiy/surfacedata/
+export surfdataFile=surfdata_1.9x2.5_2005plus10.nc
+export COMPSET=I2000Clm50SpGs
+export RES=f19_g16
+export Project_num=UWIS0042
+export COMPILER=gnu
+export MACH=cheyenne
+export CASE_NAME=/glade/work/hangkaiy/case/I2000Clm50SpGs_PFT_plus/plus10
+
+rm -rf $CASE_NAME
+cd /glade/u/home/hangkaiy/software/CLM/clm5.0/cime/scripts
+
+./create_newcase --case ${CASE_NAME} --compset ${COMPSET} --project ${Project_num} --res ${RES} --compiler ${COMPILER} --machine ${MACH}  --run-unsupported
+
+cd ${CASE_NAME}
+
+./xmlchange DATM_MODE="CLMGSWP3v1",DATM_CLMNCEP_YR_START='2001',DATM_CLMNCEP_YR_END='2010'
+./xmlchange RUN_STARTDATE="2001-01-01",REST_N=10,REST_OPTION=nyears,RESUBMIT=0
+./xmlchange STOP_N=10,STOP_OPTION=nyears
+./xmlchange JOB_WALLCLOCK_TIME="12:00:00",PROJECT="UWIS0042",JOB_QUEUE="regular"
+./xmlchange CIME_OUTPUT_ROOT=/glade/work/hangkaiy/
+cat >> user_nl_clm << EOF
+hist_nhtfrq = 0,-8760
+hist_mfilt  = 12,12
+hist_empty_htapes = .true.
+hist_fincl1 = 'FCEV','FCTR','QVEGE','QVEGT','FGEV','FCTR','TV'
+hist_fincl2 = 'FCEV','FCTR','QVEGE','QVEGT','FGEV','FCTR','TV'
+hist_dov2xy = .false.,.false.
+
+fsurdat = '${domainPath}${surfdataFile}'
+use_init_interp = .false.
+check_dynpft_consistency = .false.
+EOF
+
+./case.setup
+echo CASE_setup_SUCCESS
+
+./case.build
+echo CASE_BUILD_SUCCESS
+
+./case.submit
+
+echo CASE_SUBMIT_SUCCESS
